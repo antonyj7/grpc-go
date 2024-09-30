@@ -315,8 +315,18 @@ func (d *dnsResolver) lookupTXT(ctx context.Context) *serviceconfig.ParseResult 
 func (d *dnsResolver) lookupHost(ctx context.Context) ([]resolver.Address, error) {
 	addrs, err := d.resolver.LookupHost(ctx, d.host)
 	if err != nil {
-		err = handleDNSError(err, "A")
-		return nil, err
+		if d.host == "localhost" {
+			localAddrs, e := net.LookupHost(d.host)
+			if e != nil {
+				addrs = localAddrs
+			} else {
+				err = handleDNSError(err, "A")
+				return nil, err
+			}
+		} else {
+			err = handleDNSError(err, "A")
+			return nil, err
+		}
 	}
 	newAddrs := make([]resolver.Address, 0, len(addrs))
 	for _, a := range addrs {
