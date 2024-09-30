@@ -316,23 +316,13 @@ func (d *dnsResolver) lookupHost(ctx context.Context) ([]resolver.Address, error
 	addrs, err := d.resolver.LookupHost(ctx, d.host)
 	if err != nil {
 		if d.host == "localhost" {
-			var localAddrs []string
-			// Check for IPv4 and IPv6 support for localhost
-			addLocalAddr := func(ipStr string) {
-				ip := net.ParseIP(ipStr)
-
-				if ip.To4() != nil {
-					localAddrs = append(localAddrs, ipStr)
-				}
-				if ip.To16() != nil {
-					localAddrs = append(localAddrs, ipStr)
-				}
+			localAddrs, e := net.LookupHost(d.host)
+			if e != nil {
+				addrs = localAddrs
+			} else {
+				err = handleDNSError(err, "A")
+				return nil, err
 			}
-
-			addLocalAddr("127.0.0.1")
-			addLocalAddr("::1")
-
-			addrs = localAddrs
 		} else {
 			err = handleDNSError(err, "A")
 			return nil, err
